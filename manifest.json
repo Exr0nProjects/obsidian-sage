@@ -1,10 +1,10 @@
 {
-	"id": "obsidian-sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.1",
+	"id": "obsidian-sage",
+	"name": "Obsidian Sage",
+	"version": "0.0.1",
 	"minAppVersion": "0.12.0",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
+	"description": "Uses Live Preview to display Sage Math code blocks.",
+	"author": "Exr0n",
+	"authorUrl": "https://github.com/Exr0n",
 	"isDesktopOnly": false
 }

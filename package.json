@@ -22,6 +22,11 @@
 		"typescript": "4.4.4"
 	},
 	"dependencies": {
+		"@types/dompurify": "^2.3.3",
+		"@types/nanoid": "^3.0.0",
+		"@types/sockjs-client": "^1.5.1",
+		"dompurify": "^2.3.5",
+		"nanoid": "^3.2.0",
 		"sockjs-client": "^1.5.2"
 	}
 }

@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.sagecell-display-wrapper {
+    padding: 1rem;
+}
+
+.sagecell-display-code {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.sagecell-display-output {
+    padding-left: 1rem;
+}
+
+.sagecell-output {
+    padding: 1rem;
+    color: lightblue;
+    border-left: 1px solid white;
+}
+
+.sagecell-error {
+    background-color: rgba(255, 200, 200, 0.6);
+}

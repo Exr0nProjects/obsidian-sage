@@ -29,7 +29,6 @@ export default class ObsidianSage extends Plugin {
         await fetch(this.settings.serverURL + `kernel?CellSessionID=${cell_session_id}&timeout=inf&accepted_tos=true`, { method: "POST" })
             .then(res => res.json())
             .then(({ ws_url, id }) => {
-                console.log('kernel id gotten!', ws_url, id)
                 this.ws = new SockJS(`${this.settings.serverURL}sockjs?CellSessionID=${cell_session_id}`);
 
                 //this.ws.onmessage = console.log;
@@ -40,34 +39,45 @@ export default class ObsidianSage extends Plugin {
 
                 this.ws.onmessage = (msg: any) =>
                 {
-                    //console.log('got message from socket', msg);
                     const data = JSON.parse(msg.data.substring(46));
-                    console.log(data)
-                    const msgType = data.header.msg_type;
+                    const msgType = data.msg_type;
                     const msgId = data.parent_header.msg_id;
                     const content = data.content;
+
+                    console.log(msgType);
+
+                    if (msgType === 'error') {
+                        //new Notice("Obsidian Sage evaluation error occured.")
+                        this.outputWriters[msgId].appendError(content);
+                    }
+                    //if (msgType === 'display_data') {
+                    //    console.log(content.data['text/html']);
+                    //}
+
                     if (msgType == 'stream' && content.text) {
+                        console.log("got text", content.text)
                         this.outputWriters[msgId].appendText(content.text);
                     }
                     if (msgType == 'display_data' && content.data['text/image-filename']) {
+                        console.log("got image", content.data['text/image-filename'])
                         this.outputWriters[msgId].appendImage(this.getFileUrl(id, content.data['text/image-filename']));
                     }
                     if (msgType == 'display_data' && content.data['text/html']) {
+                        console.log("got html", content.data['text/html'])
                         this.outputWriters[msgId].appendSafeHTML(content.data['text/html']);
                     }
-                    if (msgType == 'error') {
-                        this.outputWriters[msgId].appendError(content);
-                    }
-                    if (msgType == 'execute_reply') {
-                        // DONE
-                    }
+                    //if (msgType == 'error') {
+                    //    this.outputWriters[msgId].appendError(content);
+                    //}
+                    //if (msgType == 'execute_reply') {
+                    //    // DONE
+                    //}
                 }
 
                 return [ ws_url, id ];
             })
             .then(([ ws_url, session_id ]) => {
 
-                console.log('registering processor');
                 this.registerMarkdownCodeBlockProcessor("sage", (src, el, ctx) => {
                     const req_id = nanoid();
                     const payload = JSON.stringify({
@@ -90,13 +100,14 @@ export default class ObsidianSage extends Plugin {
                         parent_header: {}
                     }, null, 4);
 
+                    el.addClass('sagecell-display-wrapper');
                     const wrapper = el.createEl("div");
                     const code_disp = wrapper.createEl("pre");
+                    code_disp.addClass('sagecell-display-code')
                     code_disp.innerText = src;
-                    const output = wrapper.createDiv();
-                    this.outputWriters[req_id] = new OutputWriter(output);
+                    this.outputWriters[req_id] = new OutputWriter(wrapper);
                     this.ws.send(`${session_id}/channels,${payload}`);
-                    console.log("sent a request!", payload)
+                    //console.log("\n\n\n\n\n\n\n\n\nsent a request!", payload)
                     //wrapper.innerText = rows.join("\n");
                     //const body = table.createEl("tbody");
                     //
@@ -165,14 +176,26 @@ class SettingTab extends PluginSettingTab {
 class OutputWriter {
     // from https://github.com/EricR/obsidian-sagecell/blob/bd4c5af9fe2c5f8b90225796f267c5471f3f505d/src/output-writer.ts
     outputEl: HTMLElement
+    target: HTMLElement
     lastType: string
 
     constructor(target: HTMLElement) {
-        this.outputEl = target;
+        this.target = target;
         this.lastType = "";
     }
 
+    initOutput() {
+        if (this.lastType !== "") return;
+        const output = this.target.createEl('details');
+        const summary_text = output.createEl('summary');
+        summary_text.innerText = 'Execution Output';
+        const actual_output = output.createEl('div');
+        actual_output.addClass('sagecell-display-output');
+        this.outputEl = actual_output;
+    }
+
     appendText(text: string) {
+        this.initOutput();
         if (this.lastType == 'text') {
             const previousPreEl = this.outputEl.querySelectorAll('pre');
 
@@ -181,6 +204,7 @@ class OutputWriter {
             }
         } else {
             const preEl = document.createElement("pre");
+            preEl.addClass('sagecell-output');
             preEl.innerText = text;
             this.outputEl.appendChild(preEl);
         }
@@ -188,6 +212,7 @@ class OutputWriter {
     }
 
     appendImage(url: string) {
+        this.initOutput();
         const imgEl = document.createElement("img");
         imgEl.src = url;
         imgEl.classList.add('sagecell-image');
@@ -198,37 +223,51 @@ class OutputWriter {
     }
 
     appendSafeHTML(html: string) {
-        const parser = new DOMParser();
-        const unsafeDoc = parser.parseFromString(html, 'text/html');
+        this.initOutput();
+        console.log("appending AFTER SAFE")
+        //const sanitized = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+        //const sanitized = DOMPurify.sanitize(html);
+        //console.log("adding sanitized", sanitized);
+        //this.outputEl.innerHTML += sanitized;
 
-        //unsafeDoc.querySelectorAll('script').forEach((scriptEl: HTMLElement) => {
-        //    if (scriptEl.type == 'math/tex') {
-        //        const mathEl = document.createElement('math');
-        //        mathEl.appendChild(document.createTextNode(scriptEl.innerText));
-        //        scriptEl.parentNode.replaceChild(mathEl, scriptEl);
-        //    }
-        //});
-
-        const safeHTML = DOMPurify.sanitize(unsafeDoc.documentElement.innerHTML);
-        const safeDoc = parser.parseFromString(safeHTML, 'text/html');
-
-        //safeDoc.querySelectorAll('math').forEach((mathEl: HTMLElement) => {
-        //    const spanEl = document.createElement('span')
-        //    spanEl.classList = 'math math-inline';
-        //    spanEl.appendChild(window.MathJax.tex2chtml(mathEl.textContent, {display: false}));
-        //    mathEl.parentNode.replaceChild(spanEl, mathEl);
-        //});
-
-        this.outputEl.innerHTML += safeDoc.body.innerHTML;
+        this.outputEl.innerHTML += html;
         this.lastType = 'html';
 
-        //window.MathJax.startup.document.clear();
-        //window.MathJax.startup.document.updateDocument();
+
+        //const parser = new DOMParser();
+        //const unsafeDoc = parser.parseFromString(html, 'text/html');
+        //
+        ////unsafeDoc.querySelectorAll('script').forEach((scriptEl: HTMLElement) => {
+        ////    if (scriptEl.type == 'math/tex') {
+        ////        const mathEl = document.createElement('math');
+        ////        mathEl.appendChild(document.createTextNode(scriptEl.innerText));
+        ////        scriptEl.parentNode.replaceChild(mathEl, scriptEl);
+        ////    }
+        ////});
+        //
+        //const safeHTML = DOMPurify.sanitize(unsafeDoc.documentElement.innerHTML);
+        //const safeDoc = parser.parseFromString(safeHTML, 'text/html');
+        //
+        //console.log(safeDoc)
+        //
+        ////safeDoc.querySelectorAll('math').forEach((mathEl: HTMLElement) => {
+        ////    const spanEl = document.createElement('span')
+        ////    spanEl.classList = 'math math-inline';
+        ////    spanEl.appendChild(window.MathJax.tex2chtml(mathEl.textContent, {display: false}));
+        ////    mathEl.parentNode.replaceChild(spanEl, mathEl);
+        ////});
+        //
+        //this.outputEl.innerHTML += safeDoc.body.innerHTML;
+        //this.lastType = 'html';
+        //
+        ////window.MathJax.startup.document.clear();
+        ////window.MathJax.startup.document.updateDocument();
     }
 
     appendError(error: any) {
+        this.initOutput();
         const spanEl = document.createElement("pre");
-        spanEl.classList.add('sagecell-error');
+        spanEl.classList.add('sagecell-error', 'bg-red-300');
         spanEl.innerText =`${error.ename}: ${error.evalue}`;
 
         this.outputEl.appendChild(spanEl);

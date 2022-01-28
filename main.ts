@@ -5,6 +5,9 @@ import { Plugin, Notice, PluginSettingTab, App, Setting } from "obsidian";
 import DOMPurify from "dompurify";
 import SockJS from "sockjs-client";
 
+function getFileUrl(server: string, sess: string, file: string): string {
+    return `${server}kernel/${sess}/files/${file}`;
+}
 interface ObsidanSageSettings {
     serverURL: string
 }
@@ -26,6 +29,8 @@ export default class ObsidianSage extends Plugin {
 
         const cell_session_id = nanoid();
 
+        //this.registerDomEvent(window, 'message', console.log);
+
         await fetch(this.settings.serverURL + `kernel?CellSessionID=${cell_session_id}&timeout=inf&accepted_tos=true`, { method: "POST" })
             .then(res => res.json())
             .then(({ ws_url, id }) => {
@@ -44,7 +49,7 @@ export default class ObsidianSage extends Plugin {
                     const msgId = data.parent_header.msg_id;
                     const content = data.content;
 
-                    console.log(msgType);
+                    console.log(msgType, content);
 
                     if (msgType === 'error') {
                         //new Notice("Obsidian Sage evaluation error occured.")
@@ -55,16 +60,15 @@ export default class ObsidianSage extends Plugin {
                     //}
 
                     if (msgType == 'stream' && content.text) {
-                        console.log("got text", content.text)
                         this.outputWriters[msgId].appendText(content.text);
                     }
                     if (msgType == 'display_data' && content.data['text/image-filename']) {
-                        console.log("got image", content.data['text/image-filename'])
-                        this.outputWriters[msgId].appendImage(this.getFileUrl(id, content.data['text/image-filename']));
+                        this.outputWriters[msgId].appendImage(getFileUrl(this.settings.serverURL, id, content.data['text/image-filename']));
                     }
                     if (msgType == 'display_data' && content.data['text/html']) {
                         console.log("got html", content.data['text/html'])
-                        this.outputWriters[msgId].appendSafeHTML(content.data['text/html']);
+                        this.outputWriters[msgId].appendInteractiveElement(this.settings.serverURL, id, content.data['text/html']);
+                        //this.outputWriters[msgId].appendSafeHTML(content.data['text/html']);
                     }
                     //if (msgType == 'error') {
                     //    this.outputWriters[msgId].appendError(content);
@@ -132,9 +136,6 @@ export default class ObsidianSage extends Plugin {
         if (this.ws) this.ws.close();
     }
 
-    getFileUrl(sess: string, file: string): string {
-        return `${this.settings.serverURL}kernel/${sess}/files/${file}`
-    }
 
     async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -157,13 +158,13 @@ class SettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createEl('h2', {text: 'Settings for my awesome plugin.'});
+        containerEl.createEl('h2', {text: 'Obsidian Sage Plugin Settings'});
 
         new Setting(containerEl)
-        .setName('Setting #1')
-        .setDesc('It\'s a secret')
+        .setName('Server URL')
+        .setDesc('A SageMathCell server that behaves like https://sagecell.sagemath.org/')
         .addText(text => text
-                 .setPlaceholder('Enter a custom server URL that behaves like https://sagecell.sagemath.org/')
+                 .setPlaceholder('https://sagecell.sagemath.org/')
                  .setValue(this.plugin.settings.serverURL)
                  .onChange(async (value: string) => {
                      if (value[value.length - 1] !== '/') value += '/';
@@ -222,14 +223,28 @@ class OutputWriter {
         this.lastType = 'image';
     }
 
+    appendInteractiveElement(server: string, sess: string, content: any) {
+        this.initOutput();
+        console.log("output inneted")
+        const pattern = RegExp('src="cell://(.+\.html)"')
+        const jankily_extracted_id = pattern.exec(content)[1];
+        const ratio_wrapper = document.createElement('div')
+        ratio_wrapper.addClass('sagecell-interactive-ratio-wrapper')
+        const el = document.createElement('iframe');
+        el.src = getFileUrl(server, sess, jankily_extracted_id);
+        el.addClass("sagecell-interactive");
+        ratio_wrapper.appendChild(el);
+        this.outputEl.appendChild(ratio_wrapper);
+        //console.log(jankily_extracted_id, );
+    }
+
     appendSafeHTML(html: string) {
         this.initOutput();
-        console.log("appending AFTER SAFE")
+
+        // safety is cringe
         //const sanitized = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
-        //const sanitized = DOMPurify.sanitize(html);
         //console.log("adding sanitized", sanitized);
         //this.outputEl.innerHTML += sanitized;
-
         this.outputEl.innerHTML += html;
         this.lastType = 'html';
 

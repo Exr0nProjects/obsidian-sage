@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .sagecell-display-wrapper {
-    padding: 1rem;
+    /*padding: 1rem;*/
 }
 
 .sagecell-display-code {
@@ -20,6 +20,21 @@
     padding: 1rem;
     color: lightblue;
     border-left: 1px solid white;
+}
+
+.sagecell-interactive-ratio-wrapper {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 60%;
+}
+
+.sagecell-interactive {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
 }
 
 .sagecell-error {

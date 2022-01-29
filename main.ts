@@ -74,6 +74,8 @@ export default class ObsidianSage extends Plugin {
             .then(([ ws_url, session_id ]) => {
 
                 this.registerMarkdownCodeBlockProcessor("sage", (src, el, ctx) => {
+                    if (this.ws == null) { console.warn("tried to parse sage math before server connection established."); return; }
+
                     const req_id = nanoid();
                     const payload = JSON.stringify({
                         header: {

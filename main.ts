@@ -20,18 +20,69 @@ const DEFAULT_SETTINGS: ObsidanSageSettings = {
 
 export default class ObsidianSage extends Plugin {
     ws: any;
+    ws_url: any;
+    session_id: any;
     settings: ObsidanSageSettings;
     outputWriters: any;
 
     async onload() {
-        this.outputWriters = {};
         await this.loadSettings();
 
         this.addSettingTab(new SettingTab(this.app, this));
 
-        const cell_session_id = nanoid();
+        new Notice("creating everything");
+        this.createListeners()
+            .then(() => {
+                this.registerMarkdownCodeBlockProcessor("sage", (src, el, ctx) => {
+                    if (this.ws == null) {
+                        console.warn("tried to parse sage math before server connection established.");
+                        this.createListeners();
+                        return;
+                    }
+                    console.log('rendering eeeeeeeeeeeeeeeeeeeeeeeeee...', this.ws);
+                    new Notice("renderingggggg");
 
-        await fetch(this.settings.serverURL + `kernel?CellSessionID=${cell_session_id}&timeout=inf&accepted_tos=true`, { method: "POST" })
+                    const req_id = nanoid();
+                    const payload = JSON.stringify({
+                        header: {
+                            msg_id: req_id,
+                            username: "",
+                            session: cell_session_id,
+                            msg_type: 'execute_request',
+                        },
+                        metadata: {},
+                        content: {
+                            code: src,
+                            silent: false,
+                            user_variables: [],
+                            user_expressions: {
+                                "_sagecell_files": "sys._sage_.new_files()",
+                            },
+                            allow_stdin: false
+                        },
+                        parent_header: {}
+                    }, null, 4);
+
+                    el.addClass('sagecell-display-wrapper');
+                    const wrapper = el.createEl("div");
+                    const code_disp = wrapper.createEl("pre");
+                    code_disp.addClass('sagecell-display-code')
+                    code_disp.innerText = src;
+                    this.outputWriters[req_id] = new OutputWriter(wrapper, this.settings.displayByDefault);
+                    console.log('just_before_send', this.ws);
+                    this.ws.send(`${session_id}/channels,${payload}`);
+                });
+            })
+            .catch(this.connectFailed);
+    }
+    async createListeners() {
+        const cell_session_id = nanoid();
+        this.outputWriters = {};
+        this.ws = null;
+        this.ws_url = null;
+        this.session_id = null;
+
+        return await fetch(this.settings.serverURL + `kernel?CellSessionID=${cell_session_id}&timeout=inf&accepted_tos=true`, { method: "POST" })
             .then(res => res.json())
             .then(({ ws_url, id }) => {
                 this.ws = new SockJS(`${this.settings.serverURL}sockjs?CellSessionID=${cell_session_id}`);
@@ -71,42 +122,6 @@ export default class ObsidianSage extends Plugin {
 
                 return [ ws_url, id ];
             })
-            .then(([ ws_url, session_id ]) => {
-
-                this.registerMarkdownCodeBlockProcessor("sage", (src, el, ctx) => {
-                    if (this.ws == null) { console.warn("tried to parse sage math before server connection established."); return; }
-
-                    const req_id = nanoid();
-                    const payload = JSON.stringify({
-                        header: {
-                            msg_id: req_id,
-                            username: "",
-                            session: cell_session_id,
-                            msg_type: 'execute_request',
-                        },
-                        metadata: {},
-                        content: {
-                            code: src,
-                            silent: false,
-                            user_variables: [],
-                            user_expressions: {
-                                "_sagecell_files": "sys._sage_.new_files()",
-                            },
-                            allow_stdin: false
-                        },
-                        parent_header: {}
-                    }, null, 4);
-
-                    el.addClass('sagecell-display-wrapper');
-                    const wrapper = el.createEl("div");
-                    const code_disp = wrapper.createEl("pre");
-                    code_disp.addClass('sagecell-display-code')
-                    code_disp.innerText = src;
-                    this.outputWriters[req_id] = new OutputWriter(wrapper, this.settings.displayByDefault);
-                    this.ws.send(`${session_id}/channels,${payload}`);
-                });
-            })
-            .catch(this.connectFailed);
     }
     connectFailed(e: any) {
         console.error(e);

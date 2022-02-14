@@ -30,17 +30,14 @@ export default class ObsidianSage extends Plugin {
 
         this.addSettingTab(new SettingTab(this.app, this));
 
-        new Notice("creating everything");
         this.createListeners()
-            .then(() => {
+            .then((cell_session_id) => {
                 this.registerMarkdownCodeBlockProcessor("sage", (src, el, ctx) => {
                     if (this.ws == null) {
                         console.warn("tried to parse sage math before server connection established.");
                         this.createListeners();
                         return;
                     }
-                    console.log('rendering eeeeeeeeeeeeeeeeeeeeeeeeee...', this.ws);
-                    new Notice("renderingggggg");
 
                     const req_id = nanoid();
                     const payload = JSON.stringify({
@@ -69,8 +66,7 @@ export default class ObsidianSage extends Plugin {
                     code_disp.addClass('sagecell-display-code')
                     code_disp.innerText = src;
                     this.outputWriters[req_id] = new OutputWriter(wrapper, this.settings.displayByDefault);
-                    console.log('just_before_send', this.ws);
-                    this.ws.send(`${session_id}/channels,${payload}`);
+                    this.ws.send(`${this.session_id}/channels,${payload}`);
                 });
             })
             .catch(this.connectFailed);
@@ -86,6 +82,7 @@ export default class ObsidianSage extends Plugin {
             .then(res => res.json())
             .then(({ ws_url, id }) => {
                 this.ws = new SockJS(`${this.settings.serverURL}sockjs?CellSessionID=${cell_session_id}`);
+                this.session_id = id;
 
                 this.ws.onclose = () => { this.ws = null; }
                 this.ws.onerror = this.connectFailed;
@@ -98,7 +95,6 @@ export default class ObsidianSage extends Plugin {
                     const content = data.content;
 
                     if (msgType === 'error') {
-                        //new Notice("Obsidian Sage evaluation error occured.")
                         this.outputWriters[msgId].appendError(content);
                     }
 
@@ -120,7 +116,8 @@ export default class ObsidianSage extends Plugin {
                     //}
                 }
 
-                return [ ws_url, id ];
+                //return [ ws_url, id ];
+                return cell_session_id;
             })
     }
     connectFailed(e: any) {

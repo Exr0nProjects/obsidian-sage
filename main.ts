@@ -4,6 +4,8 @@ import { nanoid } from "nanoid";
 import { Plugin, Notice, PluginSettingTab, App, Setting } from "obsidian";
 import DOMPurify from "dompurify";
 import SockJS from "sockjs-client";
+import URLSafeBase64 from 'urlsafe-base64';
+import zlib from 'zlib';
 
 function getFileUrl(server: string, sess: string, file: string): string {
     return `${server}kernel/${sess}/files/${file}`;
@@ -65,7 +67,7 @@ export default class ObsidianSage extends Plugin {
                     const code_disp = wrapper.createEl("pre");
                     code_disp.addClass('sagecell-display-code')
                     code_disp.innerText = src;
-                    this.outputWriters[req_id] = new OutputWriter(wrapper, this.settings.displayByDefault);
+                    this.outputWriters[req_id] = new OutputWriter(wrapper, this.settings.displayByDefault, src, this.settings.serverURL);
                     this.ws.send(`${this.session_id}/channels,${payload}`);
                 });
             })
@@ -181,20 +183,31 @@ class OutputWriter {
     target: HTMLElement
     lastType: string
     open: boolean
+    original_code: string   // constant after init
+    serverURL: string       // constant after init
 
-    constructor(target: HTMLElement, openByDefault: boolean) {
+    constructor(target: HTMLElement, openByDefault: boolean, original_code: string, serverURL: string) {
         this.target = target;
         this.lastType = "";
         this.open = openByDefault;
+        this.original_code = original_code;
+        this.serverURL = serverURL;
     }
 
     initOutput() {
         if (this.lastType !== "") return;
-        const output = this.target.createEl('details');
-        if (this.open) output.setAttribute("open", null);
-        const summary_text = output.createEl('summary');
-        summary_text.innerText = 'Execution Output';
-        const actual_output = output.createEl('div');
+        const wrapper = this.target.createEl('div');
+        const details = wrapper.createEl('details');
+        details.style.display = 'inline block';
+        if (this.open) details.setAttribute("open", null);
+        const summary_text = details.createEl('summary');
+        summary_text.innerText = 'Execution Output or ';
+        const always_visible_text = summary_text.createEl('span');
+        zlib.deflate(this.original_code, (err, buf) => {
+            if (err) new Prompt(`Failed to create SageMathCell permalink: ${err}`);
+            always_visible_text.innerHTML = `<a href="${this.serverURL}?z=${URLSafeBase64.encode(buf)}">view remote permalink</a>`;
+        })
+        const actual_output = details.createEl('div');
         actual_output.addClass('sagecell-display-output');
         this.outputEl = actual_output;
     }

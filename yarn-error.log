@@ -1,0 +1,71 @@
+Arguments: 
+  /usr/local/Cellar/node/17.4.0/bin/node /usr/local/Cellar/yarn/1.22.17_2/libexec/bin/yarn.js add @types/irlsafe-base64
+
+PATH: 
+  /Users/albhuan/arm_homebrew/Cellar/emacs-mac/emacs-27.2-mac-8.2/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/var/lib/snapd/snap/bin:/../dontrun_custom/Alacritty.app/Contents/MacOS:/Users/albhuan/.config/bin:/Users/albhuan/.local/bin:/Users/albhuan/.cargo/bin:/Users/albhuan/.config/scripts/wabt/bin:/Users/albhuan/.yarn/bin:/usr/local/Cellar/llvm/10.0.0_1/bin:/usr/local/opt/ncurses/bin:/Users/albhuan/Library/Python/3.8/bin:/Library/Frameworks/Python.framework/Versions/3.8/bin:/Users/albhuan/Library/Python/3.7/bin:/Users/albhuan/anaconda3/bin:/Users/albhuan/anaconda/bin:/usr/lib/emscripten:/Users/albhuan/.bin:/usr/local/smlnj/bin:/Users/albhuan/.fzf/bin
+
+Yarn version: 
+  1.22.17
+
+Node version: 
+  17.4.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  Error: https://registry.yarnpkg.com/@types%2firlsafe-base64: Not found
+      at Request.params.callback [as _callback] (/usr/local/Cellar/yarn/1.22.17_2/libexec/lib/cli.js:67029:18)
+      at Request.self.callback (/usr/local/Cellar/yarn/1.22.17_2/libexec/lib/cli.js:140883:22)
+      at Request.emit (node:events:520:28)
+      at Request.<anonymous> (/usr/local/Cellar/yarn/1.22.17_2/libexec/lib/cli.js:141855:10)
+      at Request.emit (node:events:520:28)
+      at IncomingMessage.<anonymous> (/usr/local/Cellar/yarn/1.22.17_2/libexec/lib/cli.js:141777:12)
+      at Object.onceWrapper (node:events:639:28)
+      at IncomingMessage.emit (node:events:532:35)
+      at endReadableNT (node:internal/streams/readable:1343:12)
+      at processTicksAndRejections (node:internal/process/task_queues:83:21)
+
+npm manifest: 
+  {
+  	"name": "obsidian-sample-plugin",
+  	"version": "1.0.1",
+  	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+  	"main": "main.js",
+  	"scripts": {
+  		"dev": "node esbuild.config.mjs",
+  		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+  		"version": "node version-bump.mjs && git add manifest.json versions.json"
+  	},
+  	"keywords": [],
+  	"author": "",
+  	"license": "MIT",
+  	"devDependencies": {
+  		"@types/node": "^16.11.6",
+  		"@typescript-eslint/eslint-plugin": "^5.2.0",
+  		"@typescript-eslint/parser": "^5.2.0",
+  		"autoprefixer": "^10.4.2",
+  		"builtin-modules": "^3.2.0",
+  		"esbuild": "0.13.12",
+  		"obsidian": "^0.12.17",
+  		"postcss": "^8.4.5",
+  		"tailwindcss": "^3.0.17",
+  		"tslib": "2.3.1",
+  		"typescript": "4.4.4"
+  	},
+  	"dependencies": {
+  		"@types/dompurify": "^2.3.3",
+  		"@types/nanoid": "^3.0.0",
+  		"@types/sockjs-client": "^1.5.1",
+  		"dompurify": "^2.3.5",
+  		"nanoid": "^3.2.0",
+  		"sockjs-client": "^1.5.2",
+  		"urlsafe-base64": "^1.0.0"
+  	}
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

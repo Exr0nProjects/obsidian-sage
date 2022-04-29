@@ -28,6 +28,7 @@
 		"@types/dompurify": "^2.3.3",
 		"@types/nanoid": "^3.0.0",
 		"@types/sockjs-client": "^1.5.1",
+		"@types/urlsafe-base64": "^1.0.28",
 		"dompurify": "^2.3.5",
 		"nanoid": "^3.2.0",
 		"sockjs-client": "^1.5.2",

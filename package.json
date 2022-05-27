@@ -30,7 +30,7 @@
 		"@types/sockjs-client": "^1.5.1",
 		"dompurify": "^2.3.5",
 		"nanoid": "^3.2.0",
-		"sockjs-client": "^1.5.2",
+		"sockjs-client": "^1.6.0",
 		"urlsafe-base64": "^1.0.0"
 	}
 }

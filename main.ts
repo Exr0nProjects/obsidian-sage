@@ -204,7 +204,7 @@ class OutputWriter {
         summary_text.innerText = 'Execution Output or ';
         const always_visible_text = summary_text.createEl('span');
         zlib.deflate(this.original_code, (err, buf) => {
-            if (err) new Prompt(`Failed to create SageMathCell permalink: ${err}`);
+            if (err) prompt(`Failed to create SageMathCell permalink: ${err}`);
             always_visible_text.innerHTML = `<a href="${this.serverURL}?z=${URLSafeBase64.encode(buf)}">view remote permalink</a>`;
         })
         const actual_output = details.createEl('div');

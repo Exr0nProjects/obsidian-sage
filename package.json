@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-sage",
 	"version": "1.0.1",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Interactive SageMath plots in Obsidian, with the public sagecell server, custom code blocks, and live preview.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

@@ -1,10 +1,10 @@
 {
 	"id": "obsidian-sage",
 	"name": "Obsidian Sage",
-	"version": "0.0.1",
+	"version": "1.0.1",
 	"minAppVersion": "0.12.0",
-	"description": "Uses Live Preview to display Sage Math code blocks.",
+	"description": "Interactive Sage Math in Obsidian with sagecell server, Live Preview, and custom code blocks.",
 	"author": "Exr0n",
 	"authorUrl": "https://github.com/Exr0n",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }

@@ -19,7 +19,7 @@
 		"builtin-modules": "^3.2.0",
 		"esbuild": "0.13.12",
 		"obsidian": "^0.12.17",
-		"postcss": "^8.4.5",
+		"postcss": "^8.4.31",
 		"tailwindcss": "^3.0.17",
 		"tslib": "2.3.1",
 		"typescript": "4.4.4"
